@@ -48,7 +48,7 @@ if __name__ == '__main__':
                       help='path to training data (default: None)')
     parser.add_argument('--test', default=None, type=str,
                       help='path to testing data (default: None)')
-    parser.add_argument('--max', default=40000, type=int,
+    parser.add_argument('--max', default=50000, type=int,
                       help='maximum number of training data (default: None)')
     args = parser.parse_args()
 

@@ -107,6 +107,7 @@ saved/*
 datasets/
 data/crawl-300d-2M.vec
 data/*.pkl
+test
 
 # editor, os cache directory
 .vscode/
