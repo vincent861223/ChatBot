@@ -1,0 +1,76 @@
+{
+    "name": "ChatBot",
+    "n_gpu": 1,
+
+    "arch": {
+        "type": "ChatBotModel",
+        "args": {
+            "padded_len": 16,
+            "hidden_size": 128,
+            "teaching_force_rate": 0.8,
+            "use_attn": true
+        }
+    },
+    "data_loader": {
+        "type": "SentencePairDataloader",
+        "args":{
+            "train_data_path": "data/train_processed.pkl",
+            "test_data_path": "data/test_processed.pkl",
+            "batch_size": 128,
+            "shuffle": true,
+            "validation_split": 0.1,
+            "num_workers": 2,
+            "padded_len": 16,
+            "add_bos": true,
+            "add_eos": true
+        }
+    },
+
+    "embedding": {
+        "type": "movie_embedding",
+        "args": {
+            "rawdata_path": "data/train_processed.pkl"
+        },
+        "pkl_path": "data/embedding_class.pkl"
+
+    },
+
+    "optimizer": {
+        "type": "Adam",
+        "args":{
+            "lr": 1e-3,
+            "weight_decay": 0,
+            "amsgrad": true
+        }
+    },
+    "loss": "maskNLLLoss",
+    "metrics": [
+        "hitRate"
+    ],
+    "lr_scheduler": {
+        "type": "StepLR",
+        "args": {
+            "step_size": 50,
+            "gamma": 0.1
+        }
+    },
+    "trainer": {
+        "epochs": 100,
+
+        "save_dir": "saved/",
+        "save_period": 1,
+        "verbosity": 2,
+        
+        "monitor": "min val_loss",
+        "early_stop": 10,
+
+        "tensorboard": true
+    },
+    "test":{
+        "sample_submission_file_path": "data/task1_sample_submission.csv",
+        "only_half": true
+
+    }
+}
+
+
