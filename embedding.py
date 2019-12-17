@@ -60,6 +60,9 @@ class movie_embedding:
     def indice_to_sentence(self, indice):
         return ' '.join(self.to_word(index) for index in indice)
 
+    def indice_to_sentenceList(self, indice):
+        return [self.to_word(index) for index in indice]
+
 class fasttext_embedding:
     def __init__(self, rawdata_path, seed=1357):
         self.word2index = {}
@@ -124,4 +127,6 @@ class fasttext_embedding:
             return self.index2word[index]
 
     def indice_to_sentence(self, indice):
-        return ' '.join(self.to_word(index) for index in indice)
+        return ' '.join(indice_to_sentenceList(indice))
+
+    

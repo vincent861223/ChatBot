@@ -7,7 +7,7 @@
         "args": {
             "padded_len": 16,
             "hidden_size": 128,
-            "teaching_force_rate": 0.8,
+            "teaching_force_rate": 1.0,
             "use_attn": true
         }
     },

@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from nltk.translate.bleu_score import sentence_bleu
 
 
 def accuracy(predict, target):
@@ -56,3 +57,12 @@ def top_k_acc(output, target, k=3):
         for i in range(k):
             correct += torch.sum(pred[:, i] == target).item()
     return correct / len(target)
+
+def bleu_score(predict, target, embedding):
+    predict_sentences = [embedding.indice_to_sentenceList(predict[i].tolist()) for i in range(predict.size(0))]
+    target_sentences = [embedding.indice_to_sentenceList(target[i].tolist()) for i in range(target.size(0))]
+    n_sentence = len(predict_sentences)
+    score = 0
+    for target_sentence, predict_sentence in zip(target_sentences, predict_sentences):
+        score += sentence_bleu(target_sentence, predict_sentence)
+    return score / n_sentence

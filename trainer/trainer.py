@@ -75,7 +75,8 @@ class Trainer(BaseTrainer):
             #predict = predict.type(torch.LongTensor).to(self.device)
 
             for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(predict, target_eos))
+                if met.__name__ == 'bleu_score': self.train_metrics.update(met.__name__, met(predict, target_eos, self.data_loader.embedding))
+                else: self.train_metrics.update(met.__name__, met(predict, target_eos))
 
             
             '''
@@ -133,7 +134,8 @@ class Trainer(BaseTrainer):
                 predict = output.max(2)[1]
 
                 for met in self.metric_ftns:
-                    self.valid_metrics.update(met.__name__, met(predict, target_eos))
+                    if met.__name__ == 'bleu_score': self.valid_metrics.update(met.__name__, met(predict, target_eos, self.data_loader.embedding))
+                    else: self.valid_metrics.update(met.__name__, met(predict, target_eos))
                 #self.writer.add_image('input', make_grid(predict.cpu(), nrow=8, normalize=True))
 
         # add histogram of model parameters to the tensorboard
