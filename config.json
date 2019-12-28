@@ -5,7 +5,7 @@
     "arch": {
         "type": "ChatBotModel",
         "args": {
-            "padded_len": 16,
+            "padded_len": 8,
             "hidden_size": 128,
             "teaching_force_rate": 1.0,
             "use_attn": true
@@ -20,7 +20,7 @@
             "shuffle": true,
             "validation_split": 0.1,
             "num_workers": 2,
-            "padded_len": 16,
+            "padded_len": 8,
             "add_bos": true,
             "add_eos": true
         }
@@ -43,9 +43,9 @@
             "amsgrad": true
         }
     },
-    "loss": "maskNLLLoss",
+    "loss": "nll_loss",
     "metrics": [
-        "hitRate"
+        "hitRate", "bleu_score"
     ],
     "lr_scheduler": {
         "type": "StepLR",
@@ -58,11 +58,8 @@
         "epochs": 100,
 
         "save_dir": "saved/",
-        "save_period": 1,
+        "save_period": 10,
         "verbosity": 2,
-        
-        "monitor": "min val_loss",
-        "early_stop": 10,
 
         "tensorboard": true
     },

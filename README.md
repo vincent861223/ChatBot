@@ -26,7 +26,7 @@ $ pip -r requirements.txt
 ### Step 1: Data Preprocessing
 
 ```
-$ python data_preprocess.py
+$ python persona_preprocess.py
 ```
 
 * The training data I use for training is [Cornell Movie--Dialogs Corpus](https://www.cs.cornell.edu/~cristian/Cornell_Movie-Dialogs_Corpus.html). I only use **movie_conversations.txt** and **movie_lines.txt** (which are in data/) for training.

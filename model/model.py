@@ -50,6 +50,7 @@ class Decoder(nn.Module):
         self.vocab_size = embedding.vocab_size
         self.emb_size = embedding.emb_size
         self.use_attn = use_attn
+        self.step = 0
 
         self.relu = nn.ReLU()
         self.softmax = nn.LogSoftmax(dim=-1)
@@ -67,7 +68,8 @@ class Decoder(nn.Module):
             param.requires_grad = False
 
     def forward(self, label, init_hidden, encoder_output=None):
-        
+        if(self.step > 2000): self.teaching_force_rate = 0.2
+        self.step += 1
         use_teaching_force = True if random.random() <= self.teaching_force_rate else False
         # source: (batch, seq_len)
         #input = self.relu(self.embedding(input)) # (batch, seq_len) -> (batch, seq_len, emb_size)
@@ -106,42 +108,8 @@ class Decoder(nn.Module):
                 last_predict = output.max(2)[1]
                 input = self.relu(self.embedding(last_predict))
 
-        # for i in range(seq_len):
-        #     word = input[:, i, :].unsqueeze(1)
-        #     #print(word.size())
-        #     if self.use_attn: 
-        #         if i == 0: 
-        #             attn_output = self.attn(encoder_output, word, init_hidden)
-        #             output, hidden = self.rnn(attn_output, init_hidden)
-        #         else: 
-        #             if(torch.randn(1) < self.teaching_force_rate):
-        #                 attn_output = self.attn(encoder_output, word, hidden)
-        #                 output, hidden = self.rnn(attn_output, hidden)
-        #             else:
-        #                 last_predict = self.relu(self.embedding(last_predict))
-        #                 attn_output = self.attn(encoder_output, last_predict, hidden)
-        #                 output, hidden = self.rnn(attn_output, hidden)
-        #     else:
-        #         if i == 0: 
-        #             output, hidden = self.rnn(word, init_hidden)
-        #         else:
-        #             if(torch.randn(1) < self.teaching_force_rate):
-        #                 output, hidden = self.rnn(word, hidden)
-        #             else:
-        #                 last_predict = self.relu(self.embedding(last_predict))
-        #                 output, hidden = self.rnn(last_predict, hidden)
-                    
-            # output = self.softmax(self.linear(output))
-            # outputs.append(output)
-            # #print(output.size())
-            # last_predict = output.max(2)[1]
-
         outputs = torch.cat(outputs, dim=1)
         return outputs
-
-        # output, hidden = self.rnn(input, init_hidden) #(batch, seq_len, emb_size) -> (batch, seq_len, emb_size*n_direction), (batch, n_layer*n_direction, hidden_size)
-        # output = self.softmax(self.linear(output))
-        # return output
 
 class Attention(nn.Module):
     def __init__(self, hidden_size, method, padded_len):
@@ -192,84 +160,4 @@ class ChatBotModel(BaseModel):
 
         return output
 
-
-class ThesisTaggingModel(BaseModel):
-    def __init__(self, dim_embeddings, num_classes, embedding, hidden_size=128,
-            num_layers=1,  rnn_dropout=0.2, clf_dropout=0.3, bidirectional=False):
-        super().__init__()
-        self.hidden_size = hidden_size
-        self.dim_embeddings = dim_embeddings
-        self.num_layers = num_layers
-        self.num_classes = num_classes
-        self.bidirectional = bool(bidirectional)
-        self.n_direction = 2 if self.bidirectional else 1
-        self.clf_dropout = clf_dropout
-        if rnn_dropout > 0 and bidirectional == False and num_layers == 1: rnn_dropout = 0.0
-
-        #logging.info("Embedding size: ({},{})".format(embedding.size(0),embedding.size(1)))
-        self.embedding = nn.Embedding(embedding.vectors.size(0), embedding.vectors.size(1))
-        self.embedding.weight = nn.Parameter(embedding.vectors)
-
-        self.encoder = Encoder(vocab_size=embedding.vectors.size(0), emb_size=embedding.vectors.size(1), hidden_size=hidden_size, rnn_cell='GRU')
-        self.decoder = Decoder(vocab_size=embedding.vectors.size(0), emb_size=embedding.vectors.size(1), hidden_size=hidden_size, rnn_cell='GRU')
-
-        self.rnn = nn.LSTM(input_size=self.dim_embeddings, hidden_size=self.hidden_size,
-                num_layers=self.num_layers, bidirectional=self.bidirectional, batch_first=True, dropout=rnn_dropout)
-        #self.hidden_linear = nn.Linear
-
-        self.clf = nn.Sequential(
-                nn.Linear(self.n_direction * self.hidden_size, self.n_direction * self.hidden_size // 2),
-                nn.BatchNorm1d(self.n_direction * self.hidden_size // 2),
-                nn.ReLU(),
-                nn.Dropout(self.clf_dropout),
-                nn.Linear(self.n_direction * self.hidden_size// 2, num_classes),
-                nn.Sigmoid()
-                )
-        self.init_weight()
-
-    def init_weight(self):
-        for m in self.modules():
-            if type(m) in [nn.LSTM, nn.GRU, nn.RNN]:
-                for name, param in m.named_parameters():
-                    if 'weight_ih' in name:
-                        torch.nn.init.xavier_uniform_(param.data)
-                    elif 'weight_hh' in name:
-                        torch.nn.init.orthogonal_(param.data)
-                    elif 'bias' in name:
-                        param.data.fill_(0)
-
-    def forward(self, bos_sentence, eos_sentence):
-        #print(bos_sentence.size())
-        with torch.no_grad():
-            bos_sentence = self.embedding(bos_sentence)
-        #print(bos_sentence.size())
-        #print(sentence.size()) # torch.Size([128, 30, 300])
-        #sentence_out, hidden = self.rnn(sentence)
-        enc_output, hidden = self.encoder(bos_sentence)
-        #print(enc_output.size())
-        enc_last_output = enc_output[:,-1,:]
-        score = self.clf(enc_last_output)
-
-        dec_output = self.decoder(bos_sentence, enc_last_output)
-        return score, dec_output
-
-class SelfAttnModel(BaseModel):
-    def __init__(self, hidden_size, q_size, k_size, v_size):
-        self.hidden_size = hidden_size
-        self.q_size = q_size
-        self.k_size = k_size
-        self.v_size = v_size
-        self.q_linear = nn.Linear(self.hidden_size, self.q_size)
-        self.k_linear = nn.Linear(self.hidden_size, self.k_size)
-        self.v_lineat = nn.Linear(self.hidden_size, self.k_size)
-        self.relu = nn.ReLU()
-        
-
-    def forward(self, sentence):
-        pass
-
-
-
-# 200411820
-# 109871334
 

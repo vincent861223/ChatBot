@@ -56,6 +56,9 @@ class Trainer(BaseTrainer):
             target_bos = target_bos.to(self.device)
             target_eos = target_eos.to(self.device)
 
+            # print(source)
+            # print(target_bos)
+            # print(target_eos)
 
             self.optimizer.zero_grad()
             # score, dec_output = self.model(bos_sentence, eos_sentence)
@@ -71,7 +74,7 @@ class Trainer(BaseTrainer):
             self.train_metrics.update('loss', loss.item())
 
             predict = output.max(2)[1]
-            #print(predict)
+            # print(predict)
             #predict = predict.type(torch.LongTensor).to(self.device)
 
             for met in self.metric_ftns:
@@ -139,8 +142,8 @@ class Trainer(BaseTrainer):
                 #self.writer.add_image('input', make_grid(predict.cpu(), nrow=8, normalize=True))
 
         # add histogram of model parameters to the tensorboard
-        for name, p in self.model.named_parameters():
-            self.writer.add_histogram(name, p, bins='auto')
+        # for name, p in self.model.named_parameters():
+        #     self.writer.add_histogram(name, p, bins='auto')
         return self.valid_metrics.result()
 
     def _progress(self, batch_idx):
